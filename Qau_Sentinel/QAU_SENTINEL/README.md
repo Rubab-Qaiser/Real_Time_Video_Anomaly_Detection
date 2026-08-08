@@ -225,8 +225,6 @@ python seed_all.py
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@qau.edu.pk` | `admin123` |
-| Operator | `operator1@qau.edu.pk` | `operator123` |
 | Viewer | `viewer1@qau.edu.pk` | `viewer123` |
 
 > ⚠️ **Change these default credentials before any real deployment.**
