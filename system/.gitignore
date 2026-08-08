@@ -1,0 +1,96 @@
+# Environment variables & secrets
+.env
+.env.*
+*.env
+!.env.example
+*.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.coverage.*
+.hypothesis/
+.mypy_cache/
+.pytype/
+.ruff_cache/
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Alert snapshots / captured images (runtime artifacts)
+Alerts/
+alerts/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Machine learning model artifacts (large OpenVINO/YOLO binaries)
+*.pt
+*.pth
+*.onnx
+*.engine
+*.bin
+*.xml
+*.weights
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.tflite
+*.ckpt
+
+# Flask instance folder
+instance/
+backend/instance/
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

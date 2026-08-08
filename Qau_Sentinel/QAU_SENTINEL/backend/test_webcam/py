@@ -1,0 +1,35 @@
+import cv2
+import os
+
+def test_webcam():
+    print("🔍 Testing webcam access...")
+    print("=" * 40)
+    
+    # Try camera sources 0, 1, 2
+    for source in [0, 1, 2]:
+        print(f"\n📹 Trying camera source {source}...")
+        try:
+            cap = cv2.VideoCapture(source)
+            
+            if cap.isOpened():
+                print(f"   ✅ Camera {source} opened successfully!")
+                ret, frame = cap.read()
+                if ret:
+                    print(f"   ✅ Frame captured successfully! Shape: {frame.shape}")
+                else:
+                    print(f"   ❌ Could not read frame from camera {source}")
+                cap.release()
+            else:
+                print(f"   ❌ Could not open camera {source}")
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+    
+    print("\n" + "=" * 40)
+    print("💡 TIPS:")
+    print("   - Make sure a webcam is connected")
+    print("   - Close other apps using the camera (Zoom, Teams, etc.)")
+    print("   - On Windows, check Camera Privacy Settings")
+    print("   - Try source numbers: 0, 1, 2, etc.")
+
+if __name__ == "__main__":
+    test_webcam()

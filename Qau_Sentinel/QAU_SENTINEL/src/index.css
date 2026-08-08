@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+/* ==========================================
+   Global Theme
+========================================== */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background-color: rgb(2 6 23);
+  color: white;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================
+   Scrollbar
+========================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(15 23 42);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(71 85 105);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139);
+}
+
+/* Firefox */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(71 85 105) rgb(15 23 42);
+}
+
+/* ==========================================
+   Selection
+========================================== */
+
+::selection {
+  background: rgb(59 130 246 / 0.3);
+}
+
+/* ==========================================
+   Focus
+========================================== */
+
+button,
+input,
+textarea,
+select {
+  outline: none;
+}
+
+/* ==========================================
+   Images
+========================================== */
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ==========================================
+   Responsive Typography
+========================================== */
+
+h1 {
+  line-height: 1.15;
+}
+
+h2,
+h3,
+h4 {
+  line-height: 1.2;
+}
+
+p {
+  line-height: 1.5;
+}
+
+/* ==========================================
+   Utility
+========================================== */
+
+.compact-card {
+  padding: 1rem;
+}
+
+.compact-grid {
+  gap: 0.75rem;
+}
+
+/* ==========================================
+   Laptop Height Optimization
+========================================== */
+
+@media (max-height: 800px) {
+  .compact-dashboard {
+    gap: 0.75rem;
+  }
+
+  .compact-dashboard .card {
+    padding: 0.875rem;
+  }
+}

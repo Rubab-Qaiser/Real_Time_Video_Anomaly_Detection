@@ -1,0 +1,34 @@
+# Sentinel — Mega Dashboard (Phase 5.3/5.4) requirements
+# Generated from actual imports in:
+#   master_mega_dashboard.py, master_detection_functions.py,
+#   master_mega_alerts.py, motion_heuristics_modified.py, dashboard_client.py
+#
+# Install with:
+#   pip install -r requirements.txt
+
+# --- Core CV / numerics ---
+opencv-python>=4.9,<5.0
+numpy>=1.26,<2.0
+
+# --- Detection models (YOLO-Pose, YOLO-Object, Fire/Smoke) ---
+# ultralytics loads both native .pt weights and exported "*_openvino_model"
+# folders. When it loads an OpenVINO-exported model it needs the openvino
+# runtime present, hence the explicit pin below (runtime only — NOT
+# openvino-dev, which is a separate heavier package only needed for
+# converting/exporting models, not for running this pipeline).
+ultralytics>=8.2,<9.0
+openvino>=2024.4,<2027.0
+
+# --- Dashboard integration (Phase 5.4) ---
+flask>=3.0,<4.0
+requests>=2.31,<3.0
+python-dotenv>=1.0,<2.0
+
+# --- Notes ---
+# - torch/torchvision are pulled in automatically by ultralytics; if your
+#   machine has a CUDA GPU, install the matching torch build FIRST from
+#   https://pytorch.org/get-started/locally/ before this file, or
+#   ultralytics will default to a CPU-only wheel.
+# - motion_heuristics_modified.py, master_mega_alerts.py, dashboard_client.py
+#   use only the Python standard library beyond the above (os, time,
+#   threading, queue, argparse, itertools, collections, dataclasses, math).
