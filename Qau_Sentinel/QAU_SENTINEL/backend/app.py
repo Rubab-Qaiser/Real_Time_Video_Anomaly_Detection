@@ -1,7 +1,10 @@
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory, jsonify
 import os
+import time
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
+
+from performance_metrics import PerformanceMetrics
 
 from config import Config
 from database.init_db import init_database
@@ -22,6 +25,11 @@ from socket_events import init_socketio
 # ==========================================
 
 socketio = None
+performance_metrics = PerformanceMetrics(
+    csv_path=os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "system", "thesis_metrics.csv")
+    )
+)
 
 
 def create_app():
@@ -146,6 +154,11 @@ def create_app():
         """Serve alert snapshot images from the system/Alerts directory."""
         return send_from_directory(ALERTS_DIR, filename)
 
+    @app.route("/api/metrics")
+    def metrics_endpoint():
+        """Expose thesis measurement snapshot for live monitoring and reporting."""
+        return jsonify(performance_metrics.get_snapshot()), 200
+
     return app, socketio
 
 
@@ -203,6 +216,25 @@ def handle_leave_room(data):
         print(
             f"📢 Client {sid} left room: {room}"
         )
+
+
+@socketio.on("latency_ping")
+def handle_latency_ping(data):
+    """Respond to client latency pings with server timestamp to measure RTT."""
+    try:
+        client_ts = data.get("client_ts")
+    except Exception:
+        client_ts = None
+
+    server_ts = int(time.time() * 1000)
+    emit("latency_pong", {"client_ts": client_ts, "server_ts": server_ts})
+
+    if client_ts is not None:
+        try:
+            rtt_ms = (time.time() * 1000) - float(client_ts)
+            performance_metrics.record_socket_rtt(rtt_ms)
+        except Exception:
+            pass
 
 
 # ==========================================

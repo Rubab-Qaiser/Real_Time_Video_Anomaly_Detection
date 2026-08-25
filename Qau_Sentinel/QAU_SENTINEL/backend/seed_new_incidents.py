@@ -11,7 +11,7 @@ from models.incident import Incident
 from models.camera import Camera
 
 
-def seed_new_incidents():
+def seed_new_incidents(force=False):
     with app.app_context():
         try:
             # Get existing cameras
@@ -21,12 +21,26 @@ def seed_new_incidents():
                 print("   Run: python seed_cameras.py")
                 return
 
-# Check if incidents already exist
+            # Check if incidents already exist
             existing = Incident.query.count()
 
             if existing > 0:
-                print(f"⚠️  {existing} incidents already exist. Skipping seed.")
-                return
+                if force:
+                    print(f"ℹ️  --force specified: deleting {existing} existing incidents...")
+                    Incident.query.delete()
+                    db.session.commit()
+                    existing = 0
+                else:
+                    # Remove any obviously-broken low-confidence entries (e.g. 0.9)
+                    removed = (
+                        Incident.query.filter(Incident.confidence <= 1.0).delete()
+                    )
+                    if removed:
+                        db.session.commit()
+                        print(f"ℹ️  Removed {removed} low-confidence incidents.")
+                    print(f"⚠️  {existing} incidents already exist. Use --force to replace them.")
+                    if not removed:
+                        return
 
             # Sample incidents — include ALL types including Fire, Smoke, Crowd
             incidents = [
@@ -105,4 +119,10 @@ def seed_new_incidents():
 
 
 if __name__ == "__main__":
-    seed_new_incidents()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true", help="Delete existing incidents and reseed")
+    args = parser.parse_args()
+
+    seed_new_incidents(force=args.force)

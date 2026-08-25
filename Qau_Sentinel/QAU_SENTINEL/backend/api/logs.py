@@ -3,6 +3,20 @@ from flask import Blueprint, jsonify, request
 from middleware.auth import viewer_required
 from models.incident import Incident
 
+
+def _display_confidence(confidence):
+    """Return confidence as a percentage without double-scaling stored values."""
+    try:
+        value = float(confidence or 0.0)
+    except (TypeError, ValueError):
+        return 0
+
+    if value <= 1.0:
+        value *= 100.0
+
+    return int(round(value))
+
+
 logs_bp = Blueprint("logs", __name__)
 
 
@@ -22,7 +36,8 @@ def get_logs():
     for incident in incidents:
         level = incident.severity.title()
         source = incident.camera.name if incident.camera else "Camera"
-        message = f"{incident.detection_type} detected with {int(float(incident.confidence) * 100)}% confidence."
+        confidence_pct = _display_confidence(incident.confidence)
+        message = f"{incident.detection_type} detected with {confidence_pct}% confidence."
 
         item = {
             "id": incident.id,

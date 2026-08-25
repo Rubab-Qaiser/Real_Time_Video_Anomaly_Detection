@@ -13,7 +13,10 @@ const SOCKET_URL = (
 export function SocketProvider({ children }) {
   const { isAuthenticated } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
+  const [latencyMs, setLatencyMs] = useState(null);
   const socketRef = useRef(null);
+  const latencySamplesRef = useRef([]);
+  const pingIntervalRef = useRef(null);
 
   useEffect(() => {
     // Only connect if user is authenticated
@@ -38,6 +41,30 @@ export function SocketProvider({ children }) {
     socket.on("connect", () => {
       console.log("🔌 Socket.IO connected");
       setIsConnected(true);
+      // start ping/pong latency sampling
+      socket.on("latency_pong", (data) => {
+        try {
+          const now = Date.now();
+          const clientTs = data && data.client_ts ? data.client_ts : null;
+          if (clientTs) {
+            const rtt = now - clientTs;
+            const samples = latencySamplesRef.current;
+            samples.push(rtt);
+            if (samples.length > 20) samples.shift();
+            latencySamplesRef.current = samples;
+            const avg = Math.round(samples.reduce((a, b) => a + b, 0) / samples.length);
+            setLatencyMs(avg);
+          }
+        } catch (e) {
+          // ignore
+        }
+      });
+
+      pingIntervalRef.current = setInterval(() => {
+        try {
+          socket.emit("latency_ping", { client_ts: Date.now() });
+        } catch (e) {}
+      }, 5000);
     });
 
     socket.on("disconnect", () => {
@@ -53,6 +80,14 @@ export function SocketProvider({ children }) {
       socket.disconnect();
       socketRef.current = null;
       setIsConnected(false);
+      // cleanup latency interval and listeners
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
+      if (socket) {
+        socket.off("latency_pong");
+      }
     };
   }, [isAuthenticated]);
 
@@ -81,6 +116,7 @@ export function SocketProvider({ children }) {
     on,
     off,
     emit,
+    latencyMs,
   };
 
   return (

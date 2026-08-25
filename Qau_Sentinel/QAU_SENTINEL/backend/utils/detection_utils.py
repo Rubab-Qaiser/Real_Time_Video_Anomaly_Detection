@@ -17,9 +17,12 @@ def draw_detections(frame, detections):
 
         x1, y1, x2, y2 = detection["bbox"]
 
+        value = float(detection['confidence'])
+        if value <= 1.0:
+            value *= 100.0
         label = (
             f"{detection['class']} "
-            f"{int(detection['confidence'] * 100)}%"
+            f"{int(round(value))}%"
         )
 
         color = CLASS_COLORS.get(

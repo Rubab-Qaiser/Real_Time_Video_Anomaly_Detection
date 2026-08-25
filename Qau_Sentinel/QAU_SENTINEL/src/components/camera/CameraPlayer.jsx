@@ -23,7 +23,8 @@ import api from "@/api/axios";
  */
 function toOverlayShape(detection, index) {
   const label = detection.class || "Unknown";
-  const conf = Math.round((detection.confidence || 0) * 100);
+  const raw = Number(detection.confidence || 0);
+  const conf = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
 
   const colorMap = {
     Fire: "red",

@@ -16,8 +16,10 @@ Updates for motion_heuristics_2_updated.py:
 """
 
 import argparse
+import csv
 import itertools
 import time
+from collections import deque
 from pathlib import Path
 
 import cv2
@@ -46,9 +48,22 @@ STALE_TRACK_TIMEOUT_SEC = 3.0
 PANEL_WIDTH = 300
 PANEL_MARGIN = 10
 BASE_DIR = Path(__file__).resolve().parent
+THESIS_METRICS_PATH = BASE_DIR / "thesis_metrics.csv"
 DEFAULT_POSE_MODEL = BASE_DIR / "yolov8n-pose_openvino_model"
 DEFAULT_OBJECT_MODEL = BASE_DIR / "yolo11n_openvino_model_320"
 DEFAULT_FIRE_SMOKE_MODEL = BASE_DIR / "fire_smoke_openvino_model" / "venv" / "FireSmokeInference" / "FireSmokeInference" / "fire_smoke_best_openvino_model"
+
+
+def append_thesis_metrics_row(metric_name: str, value_ms: float, fps_value: float | None = None):
+    """Append a thesis metric row to CSV for later analysis."""
+    try:
+        with open(THESIS_METRICS_PATH, "a", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            if THESIS_METRICS_PATH.stat().st_size == 0:
+                writer.writerow(["timestamp", "metric_name", "metric_value_ms", "fps", "note"])
+            writer.writerow([time.time(), metric_name, round(float(value_ms), 3), round(float(fps_value), 3) if fps_value is not None else "", "live_dashboard"])
+    except Exception:
+        pass
 
 
 def parse_args():
@@ -290,6 +305,7 @@ def main():
             dashboard_port=args.dashboard_port,
             camera_id=args.camera_id,
             location=args.camera_location,
+            perf_log_path=str(BASE_DIR / "perf_log.csv"),
         )
 
     alert_manager = MegaAlertManager(
@@ -324,9 +340,12 @@ def main():
     cached_people_boxes = []
 
     frame_idx = 0
-    frame_times = []
+    frame_times = deque(maxlen=30)
+    pose_times = deque(maxlen=30)
+    object_times = deque(maxlen=30)
     _status_push_counter = 0          # Throttle dashboard status push
     _STATUS_PUSH_INTERVAL = 30        # Push every ~30 frames (~once per second)
+    _THESIS_LOG_INTERVAL = 15
 
     print("[MegaDashboard] Starting main loop. Press 'q' to quit.")
     print(f"[MegaDashboard] Anomaly score panel: {args.show_anomaly_panel} (docked: {args.panel_side})")
@@ -340,7 +359,10 @@ def main():
             loop_start = time.time()
 
             # --- 1. Pose model (Main track, runs every frame) ---
+            pose_start = time.perf_counter()
             pose_results = pose_model.track(frame, persist=True, verbose=False)[0]
+            pose_ms = (time.perf_counter() - pose_start) * 1000.0
+            pose_times.append(pose_ms)
             annotated = pose_results.plot()
 
             visible_tracks = track_manager.update(pose_results)
@@ -373,8 +395,12 @@ def main():
             priority_controller.update(priority_active)
 
             # --- 2. Object & Crowd model (Time-sliced, runs every Nth frame) ---
+            object_ms = 0.0
             if frame_idx % args.frame_skip == 0:
+                obj_start = time.perf_counter()
                 obj_results = object_model.predict(frame, verbose=False)[0]
+                object_ms = (time.perf_counter() - obj_start) * 1000.0
+                object_times.append(object_ms)
 
                 new_banned_counts = {}
                 new_banned_boxes = []
@@ -421,6 +447,45 @@ def main():
             if fire_smoke_detector is not None:
                 fire_smoke_detector.update_frame(frame)
                 fs_status = fire_smoke_detector.get_status()
+
+            # Provide per-type confidence hints to MegaAlertManager so it can
+            # forward the real, current detection score to the dashboard.
+            type_confidences = {}
+            try:
+                if fs_status and (fs_status.fire_confidence or fs_status.smoke_confidence):
+                    type_confidences["fire"] = max(0.0, min(100.0, fs_status.fire_confidence * 100.0))
+                    type_confidences["smoke"] = max(0.0, min(100.0, fs_status.smoke_confidence * 100.0))
+
+                for tid, types in track_alert_types.items():
+                    if "fall" in types and visible_tracks.get(tid) is not None:
+                        fall_event = visible_tracks[tid].get_fall_event()
+                        if fall_event is not None:
+                            type_confidences["fall"] = max(type_confidences.get("fall", 0.0), float(fall_event.get("confidence_score", 0.0)) * 100.0)
+
+                    if "running" in types and visible_tracks.get(tid) is not None:
+                        running_event = visible_tracks[tid].get_running_event()
+                        if running_event is not None:
+                            type_confidences["running"] = max(type_confidences.get("running", 0.0), float(running_event.get("confidence_score", 0.0)) * 100.0)
+
+                for (id_a, id_b), (_, confidence) in fight_confidence_map.items():
+                    type_confidences["fight"] = max(type_confidences.get("fight", 0.0), float(confidence) * 100.0)
+
+                if cached_crowd_status.is_crowd or cached_crowd_status.count > 0:
+                    crowd_conf = min(1.0, cached_crowd_status.count / max(1, args.crowd_density_threshold))
+                    type_confidences["crowd"] = max(type_confidences.get("crowd", 0.0), float(crowd_conf) * 100.0)
+
+                if cached_banned_counts:
+                    total_banned = sum(cached_banned_counts.values())
+                    object_conf = min(1.0, total_banned / max(1, 3))
+                    type_confidences["object_anomaly"] = max(type_confidences.get("object_anomaly", 0.0), float(object_conf) * 100.0)
+            except Exception:
+                pass
+
+            # Attach to alert_manager for maybe_log to pick up
+            try:
+                alert_manager._type_confidences = type_confidences
+            except Exception:
+                pass
 
             # --- HUD overlay ---
             annotated = draw_hud_overlay(
@@ -490,9 +555,15 @@ def main():
 
             # --- Anomaly Score Panel & FPS readout ---
             frame_times.append(time.time() - loop_start)
-            if len(frame_times) > 30:
-                frame_times.pop(0)
             fps = 1.0 / (sum(frame_times) / len(frame_times)) if frame_times else 0.0
+
+            if frame_idx % _THESIS_LOG_INTERVAL == 0:
+                pose_avg = sum(pose_times) / len(pose_times) if pose_times else 0.0
+                obj_avg = sum(object_times) / len(object_times) if object_times else 0.0
+                print(f"[THESIS_METRICS] pose_ms={pose_avg:.2f} | object_ms={obj_avg:.2f} | fps={fps:.2f} | frame_time={sum(frame_times)/len(frame_times):.3f}s")
+                append_thesis_metrics_row("pose_ms", pose_avg, fps)
+                append_thesis_metrics_row("object_ms", obj_avg, fps)
+                append_thesis_metrics_row("frame_fps", 1000.0 / max(pose_avg + obj_avg, 1e-3), fps)
 
             # Draw the single clean anomaly score panel (FPS + all six scores)
             if args.show_anomaly_panel:

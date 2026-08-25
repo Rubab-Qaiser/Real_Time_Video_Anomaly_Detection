@@ -48,8 +48,9 @@ class MegaAlertManager:
         self._person_events = []
         self._wide_types = set()
         self._active_types = set()
+        self._type_confidences = {}
         self.history = []
-        
+
         # New for object anomalies
         self._banned_objects_counts = {}
 
@@ -135,9 +136,29 @@ class MegaAlertManager:
             self.history.append(AlertEvent(alert_type=alert_type, timestamp=now, frame_path=path))
             print(f"[MegaAlertManager] Logged {alert_type} incident -> {path}")
 
+            # Deliver optional confidence if available via _type_confidences mapping.
+            confidence = None
+            try:
+                confidence = getattr(self, "_type_confidences", {}).get(alert_type)
+                if confidence is not None:
+                    confidence = float(confidence)
+                    if confidence <= 1.0:
+                        confidence *= 100.0
+                    confidence = max(0.0, min(100.0, confidence))
+            except Exception:
+                confidence = None
+
             if self.on_alert is not None:
                 try:
-                    self.on_alert(alert_type, path, dict(self._banned_objects_counts))
+                    # Keep backward compatibility: callers that accept 3 args will
+                    # ignore the extra `confidence` parameter.
+                    self.on_alert(alert_type, path, dict(self._banned_objects_counts), confidence)
+                except TypeError:
+                    # Older callbacks: try without confidence arg
+                    try:
+                        self.on_alert(alert_type, path, dict(self._banned_objects_counts))
+                    except Exception as e:
+                        print(f"[MegaAlertManager] on_alert callback failed: {e}")
                 except Exception as e:
                     # Never let a dashboard/network failure take down the detection loop.
                     print(f"[MegaAlertManager] on_alert callback failed: {e}")

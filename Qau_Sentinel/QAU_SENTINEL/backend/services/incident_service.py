@@ -72,7 +72,15 @@ class IncidentService:
 
         incident.camera_id = data.get("camera_id")
         incident.detection_type = data.get("detection_type") or "Unknown"
-        incident.confidence = float(data.get("confidence") or 0.0)
+        # Normalize confidence to the project-wide percentage scale (0-100).
+        conf_raw = data.get("confidence") or 0.0
+        try:
+            conf_val = float(conf_raw)
+        except Exception:
+            conf_val = 0.0
+        if conf_val <= 1.0:
+            conf_val = conf_val * 100.0
+        incident.confidence = max(0.0, min(100.0, conf_val))
         incident.severity = data.get("severity") or "medium"
         incident.status = data.get("status", "Open")
         incident.frame_path = data.get("frame_path")
@@ -93,7 +101,13 @@ class IncidentService:
             incident.detection_type = data["detection_type"]
 
         if "confidence" in data:
-            incident.confidence = data["confidence"]
+            try:
+                conf_val = float(data["confidence"]) if data["confidence"] is not None else 0.0
+            except Exception:
+                conf_val = 0.0
+            if conf_val <= 1.0:
+                conf_val = conf_val * 100.0
+            incident.confidence = max(0.0, min(100.0, conf_val))
 
         if "severity" in data:
             incident.severity = data["severity"]

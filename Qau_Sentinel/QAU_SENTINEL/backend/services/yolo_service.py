@@ -1,4 +1,7 @@
 from random import randint, uniform
+import time
+
+from performance_metrics import PerformanceMetrics
 
 
 class YOLOService:
@@ -16,6 +19,8 @@ class YOLOService:
     def __init__(self):
         self.model = None
         self.model_loaded = False
+        self.metrics = PerformanceMetrics(csv_path=None)
+        self.last_inference_ms = 0.0
 
     def load_model(self):
         """
@@ -37,6 +42,9 @@ class YOLOService:
 
         if not self.model_loaded:
             self.load_model()
+
+        # Measure (mock) inference time so callers can report FPS/inference metrics
+        t0 = time.perf_counter()
 
         height, width = frame.shape[:2]
 
@@ -95,6 +103,23 @@ class YOLOService:
                     ],
                 }
             )
+
+        t1 = time.perf_counter()
+        inference_ms = (t1 - t0) * 1000.0
+        self.last_inference_ms = inference_ms
+        self.metrics.record_inference(inference_ms)
+
+        if hasattr(__import__("app", fromlist=["socketio"]), "socketio"):
+            try:
+                __import__("app", fromlist=["socketio"]).socketio.emit(
+                    "performance_metrics",
+                    {
+                        "inference_ms": round(inference_ms, 3),
+                        "fps": round(1000.0 / inference_ms if inference_ms > 0 else 0.0, 3),
+                    },
+                )
+            except Exception:
+                pass
 
         return detections
 

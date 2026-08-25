@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from database.database import db
 from models.incident import Incident
 from models.camera import Camera
+from services.camera_service import camera_service
 
 
 class AnalyticsService:
@@ -13,7 +14,13 @@ class AnalyticsService:
 
     def get_dashboard_stats(self):
         """Return high-level dashboard statistics."""
-        total_cameras = Camera.query.count()
+        # Match the cameras page behavior which limits the management view
+        # to the first four cameras. Use the camera_service to obtain the
+        # same list and apply the same slice so dashboard totals align.
+        cameras_list = camera_service.get_all()
+        if len(cameras_list) > 4:
+            cameras_list = cameras_list[:4]
+        total_cameras = len(cameras_list)
 
         active_incidents = Incident.query.filter(
             Incident.status == "Active"
