@@ -48,16 +48,16 @@ The detection pipeline pushes live incidents and status updates to the backend, 
 
 ## Key Features
 
-- 🔥 **Multi-class anomaly detection** — Fire, Smoke, Crowd, Fall, Running, Fight, and Unwanted Objects.
-- 🎥 **Live camera streaming** — MJPEG streams with token-based auth embedded in the URL.
-- ⚡ **Real-time updates** — Socket.IO pushes new incidents, camera status, detections, and logs instantly.
-- 🛡️ **Role-based access control** — `Admin`, `Operator`, and `Viewer` roles gate pages and API actions.
-- 📊 **Rich analytics** — Incident trends, detection distribution, camera performance, dashboards, and CSV/PDF report export.
-- 📋 **Incident management** — Full CRUD with search, filtering, severity, status, and pagination.
-- 🗂️ **Camera management** — Add, edit, delete, and live-monitor camera feeds.
-- 👥 **User management** — Admin-only user CRUD with role assignment.
-- 📝 **System logs** — A live, filterable log view derived from incident activity.
-- 🚨 **Alert snapshots** — Automatically captured and served images for every detected incident.
+-  **Multi-class anomaly detection** — Fire, Smoke, Crowd, Fall, Running, Fight, and Unwanted Objects.
+-  **Live camera streaming** — MJPEG streams with token-based auth embedded in the URL.
+-  **Real-time updates** — Socket.IO pushes new incidents, camera status, detections, and logs instantly.
+-  **Role-based access control** — `Admin`, `Operator`, and `Viewer` roles gate pages and API actions.
+-  **Rich analytics** — Incident trends, detection distribution, camera performance, dashboards, and CSV/PDF report export.
+-  **Incident management** — Full CRUD with search, filtering, severity, status, and pagination.
+-  **Camera management** — Add, edit, delete, and live-monitor camera feeds.
+-  **User management** — Admin-only user CRUD with role assignment.
+-  **System logs** — A live, filterable log view derived from incident activity.
+-  **Alert snapshots** — Automatically captured and served images for every detected incident.
 
 ---
 
@@ -93,13 +93,13 @@ The detection pipeline pushes live incidents and status updates to the backend, 
 
 | Detection Type | Severity | Pipeline Source |
 |----------------|----------|-----------------|
-| 🔥 Fire | critical | Fire/Smoke OpenVINO model |
-| 💨 Smoke | high | Fire/Smoke OpenVINO model |
-| 👥 Crowd | medium | YOLO-Object / Haar Cascade head count |
-| 🚶 Fall | critical | YOLO-Pose motion heuristics |
-| 🏃 Running | high | YOLO-Pose motion heuristics |
-| ⚔️ Fight | critical | YOLO-Pose pairwise heuristics |
-| 📦 Unwanted Object | high | YOLO-Object banned-class detection |
+|  Fire | critical | Fire/Smoke OpenVINO model |
+|  Smoke | high | Fire/Smoke OpenVINO model |
+|  Crowd | medium | YOLO-Object / Haar Cascade head count |
+|  Fall | critical | YOLO-Pose motion heuristics |
+|  Running | high | YOLO-Pose motion heuristics |
+|  Fight | critical | YOLO-Pose pairwise heuristics |
+|  Unwanted Object | high | YOLO-Object banned-class detection |
 
 ---
 
@@ -227,7 +227,7 @@ python seed_all.py
 |------|-------|----------|
 | Viewer | `viewer1@qau.edu.pk` | `viewer123` |
 
-> ⚠️ **Change these default credentials before any real deployment.**
+>  **Change these default credentials before any real deployment.**
 
 ### 4. Detection Pipeline (optional)
 
@@ -388,11 +388,11 @@ The backend broadcasts the following events over WebSockets:
 
 ## Security Notes
 
-- 🔐 **Never commit `.env` files** — they are git-ignored. Use `.env.example` as a template and keep real secrets out of version control.
-- 🔑 **Change default secrets** (`SECRET_KEY`, `JWT_SECRET_KEY`) and demo credentials before deployment.
-- 🎫 **JWT access/refresh tokens** — access tokens expire after 7 days; refresh tokens are revocable and stored in the database.
-- 🛡️ **Role-based auth** — API actions are gated by `viewer_required`, `operator_required`, and `admin_required` decorators.
-- 🖼️ **Streams are token-protected** — live camera URLs require a valid JWT, either as a query param or `Authorization` header.
+-  **Never commit `.env` files** — they are git-ignored. Use `.env.example` as a template and keep real secrets out of version control.
+-  **Change default secrets** (`SECRET_KEY`, `JWT_SECRET_KEY`) and demo credentials before deployment.
+-  **JWT access/refresh tokens** — access tokens expire after 7 days; refresh tokens are revocable and stored in the database.
+-  **Role-based auth** — API actions are gated by `viewer_required`, `operator_required`, and `admin_required` decorators.
+-  **Streams are token-protected** — live camera URLs require a valid JWT, either as a query param or `Authorization` header.
 
 ---
 
