@@ -126,8 +126,8 @@ Run `python master_mega_dashboard.py --help` for the full flag list (thresholds,
 # system/.env  (copy from .env.example)
 DASHBOARD_IP=127.0.0.1
 DASHBOARD_PORT=5000
-DASHBOARD_EMAIL=admin@qau.edu.pk
-DASHBOARD_PASSWORD=admin123
+DASHBOARD_EMAIL=viewer@qau.edu.pk
+DASHBOARD_PASSWORD=viewer123
 ```
 
 > Use the credentials of any active user on the QAU Sentinel backend (see the `backend/seed_users.py` file for the seeded demo accounts). Change these before any real deployment. The connection values can also be overridden via the `DashboardClient(...)` constructor or its environment variables.
