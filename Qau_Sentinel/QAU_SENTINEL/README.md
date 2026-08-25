@@ -10,7 +10,7 @@ A production-style security monitoring platform that fuses an **AI detection eng
 
 ---
 
-## 📖 Table of Contents
+##  Table of Contents
 
 - [Overview](#overview)
 - [Key Features](#key-features)
